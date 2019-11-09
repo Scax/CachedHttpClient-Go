@@ -1,6 +1,6 @@
+// Package CachedHttpClient provides structs and a interface to add a custom cache to a http.client
 package CachedHttpClient
 
-//Package CachedHttpClient provides struts and a interface to add a custom cache to a http.client
 import (
 	"bytes"
 	"errors"
