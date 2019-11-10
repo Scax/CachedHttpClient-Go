@@ -1,3 +1,3 @@
-module github.com/scax/CachedHttpClient-Go
+module github.com/Scax/CachedHttpClient-Go
 
 go 1.13
