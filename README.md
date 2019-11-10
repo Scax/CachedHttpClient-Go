@@ -30,7 +30,7 @@ request, err := http.NewRequest("GET", "http://example.com", nil)
 
 cachedTransport := CachedTransport{
 	Cache:    NewMapCache(),
-	fallback: http.DefaultTransport,
+	Fallback: http.DefaultTransport,
 }
 
 client := http.Client{
@@ -61,7 +61,7 @@ func someFunction() {
 
 	cachedTransport := CachedTransport{
 		Cache:    NewMapCache(),
-		fallback: http.DefaultTransport,
+		Fallback: http.DefaultTransport,
 	}
 
 	client := http.Client{

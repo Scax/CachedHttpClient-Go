@@ -16,7 +16,7 @@ type Cacher interface {
 
 type CachedTransport struct {
 	Cache                         Cacher
-	fallback                      http.RoundTripper
+	Fallback                      http.RoundTripper
 	ContinueRoundTripWithSetError func(transport *CachedTransport, err error, request *http.Request, response *http.Response) bool
 }
 
@@ -25,7 +25,7 @@ var DefaultCashedClient = &http.Client{
 }
 var DefaultCachedTransport = &CachedTransport{
 	Cache:                         NewMapCache(),
-	fallback:                      http.DefaultTransport,
+	Fallback:                      http.DefaultTransport,
 	ContinueRoundTripWithSetError: nil,
 }
 
@@ -40,7 +40,7 @@ func (c *CachedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	} else if !errors.Is(err, NotInCacheError) {
 		return nil, err
 	}
-	response, err := c.fallback.RoundTrip(req)
+	response, err := c.Fallback.RoundTrip(req)
 
 	if err != nil {
 		return nil, err

@@ -42,7 +42,7 @@ var serverStartedTLS = false
 var serverStarted = false
 
 func startTestServerTLS() {
-	DefaultCashedClient.Transport.(*CachedTransport).fallback = &http.Transport{
+	DefaultCashedClient.Transport.(*CachedTransport).Fallback = &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
