@@ -83,9 +83,12 @@ func OpenFileCache(filePath string) (*FileCache, error) {
 
 }
 
+const scannerMaxInt = int(^uint(0) >> 1)
+
 func loadMapCacheFromFile(file *os.File) (*MapCache, error) {
 
 	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 4096), scannerMaxInt)
 	responses := map[string]*http.Response{}
 	for scanner.Scan() {
 
