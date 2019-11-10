@@ -79,3 +79,12 @@ func TestJsonX509Certificate(t *testing.T) {
 		})
 	}
 }
+
+func TestJsonTlsConnectionState_ToConnectionState(t *testing.T) {
+
+	state := &JsonTlsConnectionState{}
+	state.ToConnectionState()
+	state = nil
+	state.ToConnectionState()
+
+}

@@ -60,7 +60,10 @@ func NewJsonResponse(res *http.Response) (*JsonResponse, error) {
 		TLS:              NewJsonTlsConnectionState(res.TLS),
 	}, nil
 }
-func (response JsonResponse) ToResponse() *http.Response {
+func (response *JsonResponse) ToResponse() *http.Response {
+	if response == nil {
+		return nil
+	}
 
 	var res = http.Response{
 		Status:           response.Status,
@@ -134,7 +137,9 @@ func NewJsonTlsConnectionState(tls *tls.ConnectionState) *JsonTlsConnectionState
 	}
 }
 func (state *JsonTlsConnectionState) ToConnectionState() *tls.ConnectionState {
-
+	if state == nil {
+		return nil
+	}
 	return &tls.ConnectionState{
 		Version:                     state.Version,
 		HandshakeComplete:           state.HandshakeComplete,
@@ -203,6 +208,9 @@ type JsonPublicKey struct {
 }
 
 func (certificate *JsonX509Certificate) ToCertificate() *x509.Certificate {
+	if certificate == nil {
+		return nil
+	}
 
 	cert := x509.Certificate{
 		Raw:                         certificate.Raw,
