@@ -47,11 +47,11 @@ type MyCache struct {
 
 }
 
-func (m MyCache) Get(req *http.Request) (*http.Response, error) {
+func (m *MyCache) Get(req *http.Request) (*http.Response, error) {
 	panic("implement me")
 }
 
-func (m MyCache) Set(req *http.Request, res *http.Response) error {
+func (m *MyCache) Set(req *http.Request, res *http.Response) error {
 	panic("implement me")
 }
 
@@ -60,7 +60,7 @@ func someFunction() {
 	request, err := http.NewRequest("GET", "http://example.com", nil)
 
 	cachedTransport := CachedTransport{
-		Cache:    NewMapCache(),
+		Cache:    &MyCache{},
 		Fallback: http.DefaultTransport,
 	}
 
@@ -68,8 +68,8 @@ func someFunction() {
 		Transport: &cachedTransport,
 	}
 
-	client.Do(request) //not cached
-	client.Do(request) //cached
+	client.Do(request) //(not cached)
+	client.Do(request) //(cached)
 }
 ```
 
