@@ -2,6 +2,10 @@ package CachedHttpClient
 
 import (
 	"bytes"
+	"crypto/dsa"
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
@@ -156,7 +160,7 @@ type JsonX509Certificate struct {
 	Signature                   []byte
 	SignatureAlgorithm          x509.SignatureAlgorithm
 	PublicKeyAlgorithm          x509.PublicKeyAlgorithm
-	PublicKey                   *rsa.PublicKey
+	PublicKey                   *JsonPublicKey
 	Version                     int
 	SerialNumber                *big.Int
 	Issuer                      pkix.Name
@@ -193,6 +197,11 @@ type JsonX509Certificate struct {
 	PolicyIdentifiers           []asn1.ObjectIdentifier
 }
 
+type JsonPublicKey struct {
+	PublicKey []byte
+	Type      string
+}
+
 func (certificate *JsonX509Certificate) ToCertificate() *x509.Certificate {
 
 	cert := x509.Certificate{
@@ -204,7 +213,6 @@ func (certificate *JsonX509Certificate) ToCertificate() *x509.Certificate {
 		Signature:                   certificate.Signature,
 		SignatureAlgorithm:          certificate.SignatureAlgorithm,
 		PublicKeyAlgorithm:          certificate.PublicKeyAlgorithm,
-		PublicKey:                   certificate.PublicKey,
 		Version:                     certificate.Version,
 		SerialNumber:                certificate.SerialNumber,
 		Issuer:                      certificate.Issuer,
@@ -242,12 +250,76 @@ func (certificate *JsonX509Certificate) ToCertificate() *x509.Certificate {
 		PolicyIdentifiers:           certificate.PolicyIdentifiers,
 	}
 
+	if certificate.PublicKey.Type == "" {
+		return &cert
+	}
+
+	var finalPublicKey interface{}
+
+	var err error
+
+	switch certificate.PublicKey.Type {
+	case "rsa.PublicKey":
+		publicKey := rsa.PublicKey{}
+		err = json.Unmarshal(certificate.PublicKey.PublicKey, &publicKey)
+		finalPublicKey = publicKey
+	case "ecdsa.PublicKey":
+		type DummyKey struct {
+			Curve map[string]interface{}
+			X, Y  *big.Int
+		}
+		dummyKey := &DummyKey{}
+		err = json.Unmarshal(certificate.PublicKey.PublicKey, &dummyKey)
+		if err != nil {
+			break
+		}
+		switch dummyKey.Curve["Name"] {
+		case "P-256":
+			finalPublicKey = &ecdsa.PublicKey{
+				Curve: elliptic.P256(),
+				X:     dummyKey.X,
+				Y:     dummyKey.Y,
+			}
+		case "P-384":
+			finalPublicKey = &ecdsa.PublicKey{
+				Curve: elliptic.P384(),
+				X:     dummyKey.X,
+				Y:     dummyKey.Y,
+			}
+		case "P-521":
+			finalPublicKey = &ecdsa.PublicKey{
+				Curve: elliptic.P521(),
+				X:     dummyKey.X,
+				Y:     dummyKey.Y,
+			}
+		default:
+			panic("unknown elliptic curve" + dummyKey.Curve["Name"].(string))
+		}
+
+	case "dsa.PublicKey":
+		publicKey := dsa.PublicKey{}
+		err = json.Unmarshal(certificate.PublicKey.PublicKey, &publicKey)
+		finalPublicKey = &publicKey
+
+	case "ed25519.PublicKey":
+		publicKey := ed25519.PublicKey{}
+		err = json.Unmarshal(certificate.PublicKey.PublicKey, &publicKey)
+		finalPublicKey = &publicKey
+
+	default:
+		panic("unknown publickey format")
+	}
+	if err != nil {
+		panic(err)
+	}
+	cert.PublicKey = finalPublicKey
 	return &cert
 
 }
 
 func NewJsonX509Certificate(cert *x509.Certificate) *JsonX509Certificate {
-	return &JsonX509Certificate{
+
+	jsonX509Certificate := &JsonX509Certificate{
 		Raw:                         cert.Raw,
 		RawTBSCertificate:           cert.RawTBSCertificate,
 		RawSubjectPublicKeyInfo:     cert.RawSubjectPublicKeyInfo,
@@ -256,7 +328,6 @@ func NewJsonX509Certificate(cert *x509.Certificate) *JsonX509Certificate {
 		Signature:                   cert.Signature,
 		SignatureAlgorithm:          cert.SignatureAlgorithm,
 		PublicKeyAlgorithm:          cert.PublicKeyAlgorithm,
-		PublicKey:                   cert.PublicKey.(*rsa.PublicKey),
 		Version:                     cert.Version,
 		SerialNumber:                cert.SerialNumber,
 		Issuer:                      cert.Issuer,
@@ -293,6 +364,31 @@ func NewJsonX509Certificate(cert *x509.Certificate) *JsonX509Certificate {
 		CRLDistributionPoints:       cert.CRLDistributionPoints,
 		PolicyIdentifiers:           cert.PolicyIdentifiers,
 	}
+
+	marshal, err := json.Marshal(cert.PublicKey)
+	if err != nil {
+		panic(err)
+	}
+
+	jsonPublicKey := &JsonPublicKey{
+		PublicKey: marshal,
+	}
+
+	switch cert.PublicKey.(type) {
+	case *rsa.PublicKey:
+		jsonPublicKey.Type = "rsa.PublicKey"
+	case *ecdsa.PublicKey:
+		jsonPublicKey.Type = "ecdsa.PublicKey"
+	case *dsa.PublicKey:
+		jsonPublicKey.Type = "dsa.PublicKey"
+	case *ed25519.PublicKey:
+		jsonPublicKey.Type = "ed25519.PublicKey"
+	default:
+		panic("unknown publickey format")
+	}
+	jsonX509Certificate.PublicKey = jsonPublicKey
+
+	return jsonX509Certificate
 }
 func NewJsonX509CertificateArray(certs []*x509.Certificate) []*JsonX509Certificate {
 	if certs == nil {
