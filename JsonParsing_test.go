@@ -8,6 +8,9 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -86,5 +89,28 @@ func TestJsonTlsConnectionState_ToConnectionState(t *testing.T) {
 	state.ToConnectionState()
 	state = nil
 	state.ToConnectionState()
+
+}
+
+func TestNewJsonResponse(t *testing.T) {
+
+	response := http.Response{}
+	response.Body = ioutil.NopCloser(strings.NewReader("test"))
+
+	_, err := NewJsonResponse(&response)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	if string(bodyBytes) != "test" {
+		t.Error("wrong body")
+	}
 
 }

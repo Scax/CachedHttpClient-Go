@@ -43,6 +43,9 @@ func NewJsonResponse(res *http.Response) (*JsonResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	res.Body = ioutil.NopCloser(bytes.NewBuffer(buf.Bytes()))
+
 	return &JsonResponse{
 		Status:           res.Status,
 		StatusCode:       res.StatusCode,
