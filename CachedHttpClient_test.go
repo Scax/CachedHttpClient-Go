@@ -3,6 +3,7 @@ package CachedHttpClient
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -62,7 +63,7 @@ func startTestServerTLS() {
 		})
 	}
 	serve := func() {
-		log.Fatal(http.ListenAndServeTLS(":8081", "testUtils/cert.pem", "testUtils/key.pem", nil))
+		log.Fatal(http.ListenAndServeTLS(":8081", "testdata/cert.pem", "testdata/key.pem", nil))
 	}
 	go serve()
 
@@ -259,6 +260,7 @@ func TestJSONResponse_ToResponse(t *testing.T) {
 
 	recreatedResponse.Request = response.Request
 	recreatedResponse.Body = response.Body
+	//removing TLS because the ekm can not be recreated and is therefor not equal
 	tlsTmp := recreatedResponse.TLS
 	recreatedResponse.TLS = response.TLS
 
@@ -273,6 +275,8 @@ func TestJSONResponse_ToResponse(t *testing.T) {
 	originalType := reflect.TypeOf(*response.TLS)
 	recreatedValue := reflect.ValueOf(*recreatedResponse.TLS)
 
+	//checking deep equal of all TLS attributes except ekm
+
 	for i := 0; i < originalType.NumField(); i++ {
 		name := originalType.Field(i).Name
 		if name == "ekm" {
@@ -285,6 +289,8 @@ func TestJSONResponse_ToResponse(t *testing.T) {
 		recInterface := recValue.Interface()
 		if !reflect.DeepEqual(orgInterface, recInterface) {
 			t.Error("tlsTmp not equal in field", name)
+			t.Log(fmt.Printf("%#v\n", orgInterface.([]*x509.Certificate)[0]))
+			t.Log(fmt.Printf("%#v\n", recInterface.([]*x509.Certificate)[0]))
 			t.Fail()
 		}
 

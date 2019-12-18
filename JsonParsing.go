@@ -273,7 +273,7 @@ func (certificate *JsonX509Certificate) ToCertificate() *x509.Certificate {
 	case "rsa.PublicKey":
 		publicKey := rsa.PublicKey{}
 		err = json.Unmarshal(certificate.PublicKey.PublicKey, &publicKey)
-		finalPublicKey = publicKey
+		finalPublicKey = &publicKey
 	case "ecdsa.PublicKey":
 		type DummyKey struct {
 			Curve map[string]interface{}
